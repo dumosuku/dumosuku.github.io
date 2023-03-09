@@ -1,5 +1,5 @@
 ---
-title: HackTheBox - Putting In The Work
+title: HackTheBox
 date: 2022-10-15-2022
 categories: [Blog]
 tags: [htb]     # TAG names should always be lowercase

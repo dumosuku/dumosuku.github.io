@@ -21,7 +21,7 @@ timezone: America/Los_Angeles
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: dumosuku                          # the main title
+title: Dumosuku                          # the main title
 
 tagline: Aspiring pentester from Cal Poly Pomona   # it will display as the sub-title
 
@@ -84,7 +84,7 @@ img_cdn:
 
 # the avatar on sidebar, support local or CORS resources
 # avatar: https://avatars.githubusercontent.com/u/31746234?s=280&v=4
-avatar: https://cdn.discordapp.com/attachments/728176428205736036/999277650667376660/Screenshot_20220720-043217_Gallery.jpg
+avatar: https://cdn.discordapp.com/attachments/728176428205736036/1083500678057566218/goldTest.png
 # boolean type, the global switch for ToC in posts.
 toc: true
 

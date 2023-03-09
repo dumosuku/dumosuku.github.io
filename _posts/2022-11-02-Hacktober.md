@@ -1,5 +1,5 @@
 ---
-title: Hacktober - SWIFT's Month of SCARE
+title: Hacktober
 date: 2022-11-02-2022
 categories: [Blog]
 tags: [swift]     # TAG names should always be lowercase

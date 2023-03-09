@@ -1,5 +1,5 @@
 ---
-title: CPP Cyber Bootcamps 2022 - How To Get Onto The Team
+title: CPP Cyber Bootcamps 2022
 date: 2022-08-27-2022
 categories: [Blog]
 tags: [cptc,ccdc,competitions]     # TAG names should always be lowercase
