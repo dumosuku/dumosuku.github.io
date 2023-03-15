@@ -303,7 +303,6 @@ My suspicions were correct, there is an `.htaccess` file for this domain. The de
 This payload worked and we have the contents of the `.htpasswd` file. The username is `developers_group` and the password can hopefully be cracked using a tool like `john`. I tried Hashcat  however, it wouldn’t take the hash.
 
     
-    
 <details open>
 <summary>Command</summary>
     `john hash --wordlist=/usr/share/wordlists/rockyou.txt` 
@@ -327,51 +326,6 @@ With the developers site password and the Redis database password, we should hav
 New site new login page, again. Reusing any of the creds earlier fails here. I let SQLmap run against this however, nothing was found. I’ll be returning to this site later with either creds or an alternate way to bypass the login page.
 
 Since I can’t get any authentication going, best I can do is retrieve some files.
-
-- `index.php`
-    
-    ```php
-    <?php
-    require './bootstrap.php';
-    
-    if (!isset($_SESSION['auth']) or $_SESSION['auth'] != True) {
-        die(header('Location: /login.php'));
-    }
-    
-    if (!isset($_GET['page']) or empty($_GET['page'])) {
-        die(header('Location: /?page=home'));
-    }
-    
-    $view = 1;
-    
-    ?>
-    
-    <!DOCTYPE html>
-    <html lang="en">
-    
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="assets/js/tailwind.js"></script>
-        <title>Developers Collect</title>
-    </head>
-    
-    <body>
-        <div class="flex flex-col h-screen justify-between">
-            <?php include("header.php"); ?>
-            
-            <main class="mb-auto mx-24">
-                <?php include($_GET['page'] . ".php"); ?>
-            </main>
-    
-            <?php include("footer.php"); ?>
-        </div>
-    
-    </body>
-    
-    </html>
-    ```
     
 
 <aside>
