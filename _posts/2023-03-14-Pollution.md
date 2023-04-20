@@ -280,7 +280,7 @@ Looking back earlier, we still haven’t really tried the developers site just y
 
 
 <video width="100%" controls>
-  <source src="/assets/vid/htaccess.mp4" type="video/mp4">
+  <source src="/assets/vid/pollution1.mp4" type="video/mp4">
 </video>
 
 
@@ -360,7 +360,7 @@ The information in our admin cookie is as follows: `"username|s:4:\"bruh\";role|
 Currently, the cookie we have for the dev site is empty. Looking back onto the `index.php`, we see that the session cookie needs to contain an “auth” value and set to be “True” in order to gain access to the site. We can set our cookie in the Redis database and refresh our page to get through. Take a look at this demo:
 
 <video width="100%" controls>
-  <source src="/assets/vid/php.mp4" type="video/mp4">
+  <source src="/assets/vid/pollution2.mp4" type="video/mp4">
 </video>
 
 ![The index of the dev site](https://i.imgur.com/J3L0385.png)
