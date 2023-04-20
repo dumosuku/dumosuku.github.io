@@ -9,9 +9,6 @@ TOC: true
 
 ![](https://i.imgur.com/PrhY1LE.png)
 
-# Preface
-I'm not an expert in any way shape or form. Fully expect that some of this information may be inaccurate. It was my first time leveraging many of these vulnerabilities so the explanations may not be accurate. Most of the results were interpreted by me from what I've read to the best of my ability. If you spot something that is off, please let me know and I'll make the changes accordingly.
-
 # Overview
 
 Pollution is an awesome and difficult Linux box focusing around an interesting choice for a tech stack. A combination of a PHP site handled with PHP FPM and a NodeJS API says it all. This box had me going through all of my web knowledge in order to fully compromise the machine.
