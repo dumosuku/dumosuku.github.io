@@ -84,7 +84,7 @@ img_cdn:
 
 # the avatar on sidebar, support local or CORS resources
 # avatar: https://avatars.githubusercontent.com/u/31746234?s=280&v=4
-avatar: https://cdn.discordapp.com/attachments/728176428205736036/1083518052764754030/pixil-frame-0.png
+avatar: https://avatars.githubusercontent.com/u/81609585?s=400&u=971df4833d71ea497fc033c322a7fd4a2e3a0179&v=4
 # boolean type, the global switch for ToC in posts.
 toc: true
 
