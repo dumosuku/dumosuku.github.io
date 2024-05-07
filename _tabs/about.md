@@ -24,12 +24,12 @@ Here's a link to my [notes](https://dumosuku.notion.site/Public-Notes-787152d15e
     </thead>
     <tbody style="text-align: left">
         <tr>
-            <td>2nd</td>
+            <td>2nd Place</td>
             <td>CCDC Nationals</td>
             <td>April 2024</td>
         </tr>
         <tr>
-            <td>1st</td>
+            <td>1st Place</td>
             <td>CCDC Western Regionals</td>
             <td>April 2024</td>
         </tr>
